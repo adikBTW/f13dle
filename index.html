@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <title>F13DLE</title>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <img src="assets/logo.png" alt="F13dle Logo" class="main-logo">
+      <div class="top-icons">
+        <button title="Settings">⚙️</button>
+        <button title="Statistics">📜</button>
+        <button title="How to play">❓</button>
+      </div>
+      <p class="subtitle">GUESS THE COUNSELORS AND JASONS OF FRIDAY THE 13TH</p>
+    </header>
+
+    <main class="menu-container">
+      <button class="menu-item" id="btn-classic">
+        <div class="icon-wrapper"><div class="icon">❓</div></div>
+        <span>CLASSIC (COUNSELORS)</span>
+      </button>
+
+      <div id="mode-selection" style="display: none; flex-direction: column; gap: 10px; margin-top: -5px;">
+        <button class="menu-item sub-item" id="btn-daily">
+          <div class="icon-wrapper sub"><div class="icon">📅</div></div>
+          <span>DAILY</span>
+        </button>
+        <button class="menu-item sub-item" id="btn-endless">
+          <div class="icon-wrapper sub"><div class="icon">♾️</div></div>
+          <span>ENDLESS</span>
+        </button>
+      </div>
+
+      <button class="menu-item" id="btn-jason">
+        <div class="icon-wrapper"><div class="icon">👺</div></div>
+        <span>JASON MODE</span>
+      </button>
+      
+      <button class="menu-item" id="btn-ability">
+        <div class="icon-wrapper"><div class="icon">✨</div></div>
+        <span>ABILITY/PERK</span>
+      </button>
+    </main>
+
+    <div id="game-area" style="display: none;">
+      <button id="btn-back" class="back-link">← BACK TO MENU</button>
+      
+      <div class="search-container">
+        <input type="text" id="guessInput" placeholder="Enter counselor name..." autocomplete="off">
+        <div id="autocomplete-list" class="autocomplete-items"></div>
+      </div>
+
+      <div class="table-wrapper">
+        <div class="column-headers">
+          <div class="header-box">Name</div>
+          <div class="header-box">Gender</div>
+          <div class="header-box">Comp.</div>
+          <div class="header-box">Luck</div>
+          <div class="header-box">Repair</div>
+          <div class="header-box">Speed</div>
+          <div class="header-box">Stam.</div>
+          <div class="header-box">Stealth</div>
+          <div class="header-box">Str.</div>
+        </div>
+        <div id="grid"></div>
+      </div>
+
+      <div id="win-modal" class="win-card-inline" style="display: none;">
+        <div class="victory-card">
+          <h2 class="victory-title">SURVIVED</h2>
+          <div class="result-card">
+            <div class="character-portrait" id="modal-portrait">
+                <span style="font-size: 3rem;">👤</span>
+            </div>
+            <div class="character-info">
+              <span class="info-label">You guessed:</span>
+              <div class="guessed-name" id="correct-name"></div>
+              <div class="tries-badge">Tries: <span id="tries-count">0</span></div>
+            </div>
+          </div>
+          <div class="modal-divider"></div>
+          <div class="next-game-info">
+            <p>Next counselor in:</p>
+            <div class="countdown" id="countdown">00:00:00</div>
+          </div>
+          <button id="btn-restart" class="restart-btn">RESTART GAME</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
