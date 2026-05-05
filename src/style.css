@@ -305,3 +305,32 @@ body {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+.disclaimer {
+  margin-top: 60px;
+  padding: 15px;
+  border-top: 1px solid var(--f13-border);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.disclaimer p {
+  font-family: Arial, sans-serif;
+  font-size: 0.65rem;
+  color: #555;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
