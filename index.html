@@ -4,95 +4,137 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="favicon.png">
-  <title>F13DLE</title>
+  <title>F13DLE | Guess or Die</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="vhs-overlay"></div>
+  
+  <div id="alert-banner" class="alert-banner">
+    <span class="alert-icon">⚠️</span>
+    <p>Issues with Perk images are known. We are working on a fix!</p>
+  </div>
+
   <div id="app">
     <header>
       <img src="assets/logo.png" alt="F13dle Logo" class="main-logo">
       <div class="top-icons">
         <button title="Settings">⚙️</button>
-        <button title="Statistics">📜</button>
-        <button title="How to play">❓</button>
+        <button id="btn-open-stats" title="Statistics">📜</button>
+        <button id="btn-open-help" title="How to play">❓</button>
       </div>
-      <p class="subtitle">GUESS THE COUNSELORS AND JASONS OF FRIDAY THE 13TH</p>
+      <p class="subtitle">GUESS OR DIE: COUNSELORS & JASONS</p>
     </header>
 
     <main class="menu-container">
       <button class="menu-item" id="btn-classic">
-        <div class="icon-wrapper"><div class="icon">❓</div></div>
-        <span>CLASSIC (COUNSELORS)</span>
+        <div class="icon-wrapper"><div class="icon">📁</div></div>
+        <span>COUNSELOR DATABASE</span>
       </button>
 
-      <div id="mode-selection" style="display: none; flex-direction: column; gap: 10px; margin-top: -5px;">
+      <div id="mode-selection" class="sub-menu" style="display: none;">
         <button class="menu-item sub-item" id="btn-daily">
           <div class="icon-wrapper sub"><div class="icon">📅</div></div>
-          <span>DAILY</span>
+          <span>DAILY FILE</span>
         </button>
         <button class="menu-item sub-item" id="btn-endless">
           <div class="icon-wrapper sub"><div class="icon">♾️</div></div>
-          <span>ENDLESS</span>
+          <span>ENDLESS SURVIVAL</span>
         </button>
       </div>
 
       <button class="menu-item" id="btn-jason">
-        <div class="icon-wrapper"><div class="icon">👺</div></div>
-        <span>JASON MODE</span>
+        <div class="icon-wrapper"><div class="icon">🔪</div></div>
+        <span>JASON ARCHIVES</span>
       </button>
+
+      <div id="jason-mode-selection" class="sub-menu" style="display: none;">
+        <button class="menu-item sub-item" id="btn-jason-daily">
+          <div class="icon-wrapper sub"><div class="icon">📅</div></div>
+          <span>DAILY SLAY</span>
+        </button>
+        <button class="menu-item sub-item" id="btn-jason-endless">
+          <div class="icon-wrapper sub"><div class="icon">♾️</div></div>
+          <span>ENDLESS KILL</span>
+        </button>
+      </div>
       
       <button class="menu-item" id="btn-ability">
         <div class="icon-wrapper"><div class="icon">✨</div></div>
-        <span>ABILITY/PERK</span>
+        <span>ABILITIES / PERKS</span>
       </button>
+
+      <div id="perk-mode-selection" class="sub-menu" style="display: none;">
+        <button class="menu-item sub-item" id="btn-perk-daily">
+          <div class="icon-wrapper sub"><div class="icon">📅</div></div>
+          <span>DAILY KNOWLEDGE</span>
+        </button>
+        <button class="menu-item sub-item" id="btn-perk-endless">
+          <div class="icon-wrapper sub"><div class="icon">♾️</div></div>
+          <span>ENDLESS STUDY</span>
+        </button>
+      </div>
     </main>
 
     <div id="game-area" style="display: none;">
-      <button id="btn-back" class="back-link">← BACK TO MENU</button>
-      
+      <button id="btn-back" class="back-link">← BACK TO CAMP</button>
       <div class="search-container">
-        <input type="text" id="guessInput" placeholder="Enter counselor name..." autocomplete="off">
+        <input type="text" id="guessInput" placeholder="Enter name..." autocomplete="off">
         <div id="autocomplete-list" class="autocomplete-items"></div>
       </div>
-
       <div class="table-wrapper">
-        <div class="column-headers">
-          <div class="header-box">Name</div>
-          <div class="header-box">Gender</div>
-          <div class="header-box">Comp.</div>
-          <div class="header-box">Luck</div>
-          <div class="header-box">Repair</div>
-          <div class="header-box">Speed</div>
-          <div class="header-box">Stam.</div>
-          <div class="header-box">Stealth</div>
-          <div class="header-box">Str.</div>
-        </div>
+        <div class="column-headers" id="table-headers"></div>
         <div id="grid"></div>
       </div>
 
-      <div id="win-modal" class="win-card-inline" style="display: none;">
+      <div id="win-card" style="display: none;">
         <div class="victory-card">
           <h2 class="victory-title">SURVIVED</h2>
-          <div class="result-card">
-            <div class="character-portrait" id="modal-portrait">
-                <span style="font-size: 3rem;">👤</span>
-            </div>
-            <div class="character-info">
-              <span class="info-label">You guessed:</span>
-              <div class="guessed-name" id="correct-name"></div>
-              <div class="tries-badge">Tries: <span id="tries-count">0</span></div>
-            </div>
+          <div class="win-portrait-large" id="modal-portrait"></div>
+          <div class="win-info">
+            <span class="win-info-label">Identified:</span>
+            <span class="win-info-name" id="correct-name"></span>
+            <span class="win-info-tries">Tries: <span id="tries-count">0</span></span>
           </div>
-          <div class="modal-divider"></div>
-          <div class="next-game-info">
-            <p>Next counselor in:</p>
-            <div class="countdown" id="countdown">00:00:00</div>
+          <div id="countdown-container" style="display: none;">
+            <p class="countdown-label">NEXT COUNSELOR IN:</p>
+            <div class="countdown-timer" id="countdown-timer">00:00:00</div>
           </div>
-          <button id="btn-restart" class="restart-btn">RESTART GAME</button>
+          <button id="btn-restart" class="restart-btn">NEW FILE</button>
         </div>
       </div>
     </div>
+
+    <div id="modal-help" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal" id="close-help">&times;</span>
+        <h2 class="victory-title" style="font-size: 2rem;">HOW TO PLAY</h2>
+        <div class="help-text">
+          <p>Guess the character. Colors show matches.</p>
+          <ul style="text-align: left; list-style-type: '🔪 '; padding-left: 20px;">
+            <li><b>GREEN:</b> Perfect match.</li>
+            <li><b>YELLOW:</b> Partial match.</li>
+            <li><b>RED:</b> No match.</li>
+            <li><b>ARROWS:</b> Target is higher (↑) or lower (↓).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-stats" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close-modal" id="close-stats">&times;</span>
+        <h2 class="victory-title" style="font-size: 2rem;">STATISTICS</h2>
+        <div class="stats-grid">
+          <div class="stat-box"><div id="stats-played">0</div><span>Played</span></div>
+          <div class="stat-box"><div id="stats-wins">0</div><span>Wins</span></div>
+          <div class="stat-box"><div id="stats-streak">0</div><span>Streak</span></div>
+        </div>
+      </div>
+    </div>
+
     <footer class="disclaimer">
-      <p>This is a non-profit fan-made project created for the community. Friday the 13th and all related characters are trademarks of their respective owners. No copyright infringement intended.</p>
+        <p class="footer-text">This is a non-profit fan-made project created for the community. Friday the 13th and all related characters are trademarks of their respective owners. No copyright infringement intended.</p>
     </footer>
   </div>
   <script type="module" src="/src/main.js"></script>

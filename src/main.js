@@ -1,239 +1,225 @@
+import { jasons } from './jasons.js';
 import { counselors } from './characters.js';
+import { perks } from './perks.js';
+import { 
+  renderCounselorRow, 
+  renderJasonRow, 
+  renderPerkRow, 
+  getCharacterImageUrl
+} from './gameLogic.js';
 import './style.css';
 
 const btnClassic = document.getElementById('btn-classic');
+const jasonBtn = document.getElementById('btn-jason');
+const perkBtn = document.getElementById('btn-ability');
+const modeSelection = document.getElementById('mode-selection');
+const jasonModeSelection = document.getElementById('jason-mode-selection');
+const perkModeSelection = document.getElementById('perk-mode-selection');
 const btnDaily = document.getElementById('btn-daily');
 const btnEndless = document.getElementById('btn-endless');
+const btnJasonDaily = document.getElementById('btn-jason-daily');
+const btnJasonEndless = document.getElementById('btn-jason-endless');
+const btnPerkDaily = document.getElementById('btn-perk-daily');
+const btnPerkEndless = document.getElementById('btn-perk-endless');
 const btnBack = document.getElementById('btn-back');
-const modeSelection = document.getElementById('mode-selection');
 const menuContainer = document.querySelector('.menu-container');
 const gameArea = document.getElementById('game-area');
 const guessInput = document.getElementById('guessInput');
 const autoList = document.getElementById('autocomplete-list');
-const btnRestart = document.getElementById('btn-restart');
-const jasonBtn = document.getElementById('btn-jason');
-const abilityBtn = document.getElementById('btn-ability');
+const grid = document.getElementById('grid');
+const headerContainer = document.getElementById('table-headers');
+const modalHelp = document.getElementById('modal-help');
+const modalStats = document.getElementById('modal-stats');
+const btnHelpOpen = document.getElementById('btn-open-help');
+const btnStatsOpen = document.getElementById('btn-open-stats');
 
+let currentMode = 'counselors';
+let isDaily = false;
 let targetCharacter = null;
 let guessedNames = [];
 let tries = 0;
-let isEndless = false;
+let countdownInterval = null;
 
-function getCharacterImageUrl(name) {
-  const fullFormat = name.toLowerCase().replace(/\s+/g, '_').replace(/\./g, '');
-  const firstFormat = name.toLowerCase().split(' ')[0].replace(/\./g, '');
-  const fullPath = new URL(`./assets/icons/counselors/${fullFormat}.webp`, import.meta.url).href;
-  const firstPath = new URL(`./assets/icons/counselors/${firstFormat}.webp`, import.meta.url).href;
-  const namesWithFullFile = ['A.J.', 'Chad', 'Vanessa', 'Jenny', 'Tiffany', 'Kenny', 'Deborah'];
-  if (namesWithFullFile.some(n => name.includes(n))) {
-      return fullPath;
-  }
-  return firstPath;
+function getDailyCharacter(dataPool) {
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  return dataPool[seed % dataPool.length];
 }
 
-function createPortraitHTML(name) {
-  return `
-    <div class="portrait-container">
-      <img src="${getCharacterImageUrl(name)}" alt="${name}">
-      <div class="portrait-name-overlay">${name}</div>
-    </div>
-  `;
-}
-
-function getDailySeed() {
+function getSecondsUntilMidnight() {
   const now = new Date();
-  const adjustedDate = new Date(now.getTime() - (6 * 60 * 60 * 1000));
-  return adjustedDate.getFullYear() * 10000 + (adjustedDate.getMonth() + 1) * 100 + adjustedDate.getDate();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  return Math.floor((midnight - now) / 1000);
 }
 
-function updateCountdown() {
-  const now = new Date();
-  const nextUpdate = new Date();
-  nextUpdate.setHours(6, 0, 0, 0);
-  if (now >= nextUpdate) {
-    nextUpdate.setDate(nextUpdate.getDate() + 1);
-  }
-  const diff = nextUpdate - now;
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  const countdownElem = document.getElementById('countdown');
-  if (countdownElem) {
-    countdownElem.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
+function formatCountdown(seconds) {
+  const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
 }
 
-setInterval(updateCountdown, 1000);
-
-function resetGameState() {
+function startNewGame() {
   guessedNames = [];
   tries = 0;
-  document.getElementById('grid').innerHTML = "";
+  grid.innerHTML = "";
   guessInput.value = "";
-  autoList.innerHTML = "";
-  document.getElementById('win-modal').style.display = 'none';
-  const portraitContainer = document.getElementById('modal-portrait');
-  if (portraitContainer) portraitContainer.innerHTML = '👤';
-}
-
-function startNewGame(mode) {
-  resetGameState();
-  if (mode === 'daily') {
-    isEndless = false;
-    const seed = getDailySeed();
-    targetCharacter = counselors[seed % counselors.length];
-    const savedDaily = localStorage.getItem('f13dle_daily_data');
-    if (savedDaily) {
-      const data = JSON.parse(savedDaily);
-      if (data.seed === seed) {
-        tries = data.tries;
-        guessedNames = data.guesses;
-        guessedNames.forEach(name => {
-          const char = counselors.find(c => c.name === name);
-          renderRow(char);
-        });
-        if (data.won) {
-          showWinModal();
-          gameArea.style.display = 'block';
-          menuContainer.style.display = 'none';
-          guessInput.disabled = true;
-          guessInput.placeholder = "You survived today. Come back tomorrow!";
-          return;
-        }
-      } else {
-        localStorage.removeItem('f13dle_daily_data');
-      }
-    }
-    guessInput.disabled = false;
-    guessInput.placeholder = "Enter counselor name...";
-  } else {
-    isEndless = true;
-    targetCharacter = counselors[Math.floor(Math.random() * counselors.length)];
-    guessInput.disabled = false;
-    guessInput.placeholder = "Enter counselor name...";
-  }
+  guessInput.disabled = false;
   menuContainer.style.display = 'none';
   modeSelection.style.display = 'none';
+  jasonModeSelection.style.display = 'none';
+  if (perkModeSelection) perkModeSelection.style.display = 'none';
   gameArea.style.display = 'block';
+  document.getElementById('win-card').style.display = 'none';
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  let dataPool = currentMode === 'jasons' ? jasons : currentMode === 'perks' ? perks : counselors;
+  if (isDaily) {
+    targetCharacter = getDailyCharacter(dataPool);
+    document.getElementById('btn-restart').style.display = 'none';
+  } else {
+    targetCharacter = dataPool[Math.floor(Math.random() * dataPool.length)];
+    document.getElementById('btn-restart').style.display = 'block';
+  }
+  updateHeaders();
 }
 
-btnClassic.addEventListener('click', () => {
-  const isHidden = modeSelection.style.display === 'none';
-  modeSelection.style.display = isHidden ? 'flex' : 'none';
-  jasonBtn.style.display = isHidden ? 'none' : 'flex';
-  abilityBtn.style.display = isHidden ? 'none' : 'flex';
-});
-
-btnDaily.addEventListener('click', () => startNewGame('daily'));
-btnEndless.addEventListener('click', () => startNewGame('endless'));
-
-btnBack.addEventListener('click', () => {
-  menuContainer.style.display = 'flex';
-  gameArea.style.display = 'none';
-  jasonBtn.style.display = 'flex';
-  abilityBtn.style.display = 'flex';
-  resetGameState();
-});
-
-btnRestart.addEventListener('click', () => {
-  if (isEndless) {
-    startNewGame('endless');
+function updateHeaders() {
+  if (currentMode === 'jasons') {
+    headerContainer.innerHTML = `<div class="header-box">Jason</div><div class="header-box">Weapon</div><div class="header-box">Run?</div><div class="header-box">Pros</div><div class="header-box">Cons</div><div class="header-box">Dest.</div><div class="header-box">Water</div><div class="header-box">Traps</div>`;
+    guessInput.placeholder = "Enter Jason name...";
+  } else if (currentMode === 'perks') {
+    headerContainer.innerHTML = `<div class="header-box">Perk</div><div class="header-box">Category</div><div class="header-box">Buff</div><div class="header-box">Debuff</div>`;
+    guessInput.placeholder = "Enter perk name...";
   } else {
-    location.reload(); 
+    headerContainer.innerHTML = `<div class="header-box">Name</div><div class="header-box">Sex</div><div class="header-box">Comp.</div><div class="header-box">Luck</div><div class="header-box">Repair</div><div class="header-box">Speed</div><div class="header-box">Stam.</div><div class="header-box">Stealth</div><div class="header-box">Str.</div>`;
+    guessInput.placeholder = "Enter counselor name...";
   }
-});
-
-guessInput.addEventListener('input', function() {
-  const val = this.value;
-  autoList.innerHTML = "";
-  if (!val) return;
-  const matches = counselors.filter(c => 
-    c.name.toLowerCase().includes(val.toLowerCase()) && 
-    !guessedNames.includes(c.name)
-  );
-  matches.forEach(match => {
-    const div = document.createElement("div");
-    div.className = "autocomplete-item";
-    div.innerHTML = `
-      <img src="${getCharacterImageUrl(match.name)}" class="autocomplete-img" alt="">
-      <span class="autocomplete-name">${match.name}</span>
-    `;
-    div.addEventListener("click", () => {
-      guessInput.value = "";
-      autoList.innerHTML = "";
-      makeGuess(match);
-    });
-    autoList.appendChild(div);
-  });
-});
+}
 
 function makeGuess(match) {
   tries++;
   guessedNames.push(match.name);
-  renderRow(match);
-  if (!isEndless) {
-    const dailyData = {
-      seed: getDailySeed(),
-      tries: tries,
-      guesses: guessedNames,
-      won: match.name === targetCharacter.name
-    };
-    localStorage.setItem('f13dle_daily_data', JSON.stringify(dailyData));
-  }
-  if (match.name === targetCharacter.name) {
-    setTimeout(showWinModal, 400);
-  }
+  let row = currentMode === 'jasons' ? renderJasonRow(match, targetCharacter) : currentMode === 'perks' ? renderPerkRow(match, targetCharacter) : renderCounselorRow(match, targetCharacter);
+  grid.prepend(row);
+  if (match.name === targetCharacter.name) setTimeout(showWinCard, 400);
 }
 
-function renderRow(guessChar) {
-  const row = document.createElement('div');
-  row.className = 'row';
-  const props = ['name', 'gender', 'composure', 'luck', 'repair', 'speed', 'stamina', 'stealth', 'strength'];
-  props.forEach((prop, index) => {
-    const box = document.createElement('div');
-    box.className = 'box';
-    const val = guessChar[prop];
-    const targetVal = targetCharacter[prop];
-    if (index === 0) {
-      box.innerHTML = createPortraitHTML(guessChar.name);
-    } else {
-      box.innerHTML = `<span>${val}</span>`;
-    }
-    if (val === targetVal) {
-      box.classList.add('correct');
-    } else {
-      if (index !== 0) box.classList.add('wrong');
-      if (typeof val === 'number') {
-        box.innerHTML += val < targetVal ? `<span class="arrow">↑</span>` : `<span class="arrow">↓</span>`;
-      }
-    }
-    row.appendChild(box);
-  });
-  document.getElementById('grid').prepend(row);
+function updateStatsUI() {
+  const stats = JSON.parse(localStorage.getItem('f13dle_stats')) || { played: 0, wins: 0, streak: 0 };
+  document.getElementById('stats-played').textContent = stats.played;
+  document.getElementById('stats-wins').textContent = stats.wins;
+  document.getElementById('stats-streak').textContent = stats.streak;
 }
 
-function showWinModal() {
-  const winModal = document.getElementById('win-modal');
-  const portraitContainer = document.getElementById('modal-portrait');
+function saveWin() {
+  let stats = JSON.parse(localStorage.getItem('f13dle_stats')) || { played: 0, wins: 0, streak: 0 };
+  stats.played++;
+  stats.wins++;
+  stats.streak++;
+  localStorage.setItem('f13dle_stats', JSON.stringify(stats));
+}
+
+function showWinCard() {
+  saveWin();
+  guessInput.disabled = true;
+
+  const imgUrl = getCharacterImageUrl(targetCharacter.name, currentMode);
+  document.getElementById('modal-portrait').innerHTML = `
+    <img src="${imgUrl}" alt="${targetCharacter.name}" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x400?text=?';">
+    <div class="win-portrait-name">${targetCharacter.name}</div>
+  `;
+
   document.getElementById('correct-name').textContent = targetCharacter.name;
   document.getElementById('tries-count').textContent = tries;
-  if (portraitContainer) {
-    portraitContainer.innerHTML = createPortraitHTML(targetCharacter.name);
-  }
-  winModal.style.display = 'flex';
-  const nextGameInfo = document.querySelector('.next-game-info');
-  if (isEndless) {
-    btnRestart.style.display = 'block';
-    btnRestart.textContent = "NEXT SURVIVOR";
-    nextGameInfo.style.display = 'none';
+
+  const countdownContainer = document.getElementById('countdown-container');
+  const timerEl = document.getElementById('countdown-timer');
+
+  if (isDaily) {
+    countdownContainer.style.display = 'block';
+    document.getElementById('btn-restart').style.display = 'none';
+    if (countdownInterval) clearInterval(countdownInterval);
+    let secs = getSecondsUntilMidnight();
+    timerEl.textContent = formatCountdown(secs);
+    countdownInterval = setInterval(() => {
+      secs--;
+      if (secs <= 0) { clearInterval(countdownInterval); secs = 0; }
+      timerEl.textContent = formatCountdown(secs);
+    }, 1000);
   } else {
-    btnRestart.style.display = 'none'; 
-    nextGameInfo.style.display = 'block';
-    updateCountdown();
-    guessInput.disabled = true;
-    guessInput.placeholder = "You survived today. Come back tomorrow!";
+    countdownContainer.style.display = 'none';
+    document.getElementById('btn-restart').style.display = 'block';
   }
-  setTimeout(() => {
-    winModal.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 500);
+
+  const winCard = document.getElementById('win-card');
+  winCard.style.display = 'block';
+  winCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+
+btnClassic.addEventListener('click', () => {
+  jasonModeSelection.style.display = 'none';
+  if (perkModeSelection) perkModeSelection.style.display = 'none';
+  modeSelection.style.display = (modeSelection.style.display === 'none' || modeSelection.style.display === '') ? 'flex' : 'none';
+});
+
+jasonBtn.addEventListener('click', () => {
+  modeSelection.style.display = 'none';
+  if (perkModeSelection) perkModeSelection.style.display = 'none';
+  jasonModeSelection.style.display = (jasonModeSelection.style.display === 'none' || jasonModeSelection.style.display === '') ? 'flex' : 'none';
+});
+
+if (perkBtn) {
+  perkBtn.addEventListener('click', () => {
+    modeSelection.style.display = 'none';
+    jasonModeSelection.style.display = 'none';
+    if (perkModeSelection) perkModeSelection.style.display = (perkModeSelection.style.display === 'none' || perkModeSelection.style.display === '') ? 'flex' : 'none';
+  });
+}
+
+btnDaily.addEventListener('click', () => { currentMode = 'counselors'; isDaily = true; startNewGame(); });
+btnEndless.addEventListener('click', () => { currentMode = 'counselors'; isDaily = false; startNewGame(); });
+btnJasonDaily.addEventListener('click', () => { currentMode = 'jasons'; isDaily = true; startNewGame(); });
+btnJasonEndless.addEventListener('click', () => { currentMode = 'jasons'; isDaily = false; startNewGame(); });
+if (btnPerkDaily) btnPerkDaily.addEventListener('click', () => { currentMode = 'perks'; isDaily = true; startNewGame(); });
+if (btnPerkEndless) btnPerkEndless.addEventListener('click', () => { currentMode = 'perks'; isDaily = false; startNewGame(); });
+
+guessInput.addEventListener('input', function() {
+  const val = this.value.toLowerCase();
+  autoList.innerHTML = "";
+  if (!val) return;
+  const dataPool = currentMode === 'jasons' ? jasons : currentMode === 'perks' ? perks : counselors;
+  const matches = dataPool.filter(c => c.name.toLowerCase().includes(val) && !guessedNames.includes(c.name));
+  matches.forEach(match => {
+    const div = document.createElement("div");
+    div.className = "autocomplete-item";
+    const imgUrl = getCharacterImageUrl(match.name, currentMode);
+    div.innerHTML = `<img src="${imgUrl}" class="autocomplete-img" onerror="this.onerror=null; this.src='https://via.placeholder.com/40';"><span>${match.name}</span>`;
+    div.onclick = () => {
+      guessInput.value = "";
+      autoList.innerHTML = "";
+      makeGuess(match);
+    };
+    autoList.appendChild(div);
+  });
+});
+
+btnBack.addEventListener('click', () => {
+  menuContainer.style.display = 'flex';
+  gameArea.style.display = 'none';
+  document.getElementById('win-card').style.display = 'none';
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+});
+
+btnHelpOpen.onclick = () => modalHelp.style.display = 'flex';
+btnStatsOpen.onclick = () => { updateStatsUI(); modalStats.style.display = 'flex'; };
+document.getElementById('close-help').onclick = () => modalHelp.style.display = 'none';
+document.getElementById('close-stats').onclick = () => modalStats.style.display = 'none';
+window.onclick = (e) => { if (e.target == modalHelp) modalHelp.style.display = 'none'; if (e.target == modalStats) modalStats.style.display = 'none'; };
+document.getElementById('btn-restart').addEventListener('click', startNewGame);
